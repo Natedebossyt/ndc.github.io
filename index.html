@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Weather Alerts</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="title">
+Weather Alert Center
+</div>
+
+<div class="images">
+<img src="image1.jpg">
+<img src="image2.jpg">
+<img src="image3.jpg">
+</div>
+
+<div class="alertBox">
+<h2>Current Alert</h2>
+
+<div id="alertData">
+Loading alert...
+</div>
+
+</div>
+
+<script>
+fetch("alert.txt")
+.then(response => response.text())
+.then(data => {
+
+let alert = {};
+
+data.split("\n").forEach(line => {
+
+if(line.includes(":")){
+
+let parts = line.split(":");
+let key = parts[0].trim();
+let value = parts.slice(1).join(":").trim();
+
+alert[key] = value;
+
+}
+
+});
+
+document.getElementById("alertData").innerHTML = `
+<b>Title:</b> ${alert.Title || ""}<br>
+<b>Severity:</b> ${alert.Severity || ""}<br>
+<b>Summary:</b> ${alert.Summary || ""}<br>
+<b>Hazard:</b> ${alert.Hazard || ""}<br>
+<b>Area:</b> ${alert.Area || ""}<br>
+<b>Direction:</b> ${alert.Direction || ""}<br>
+<b>Expires:</b> ${alert.Expires || ""}<br>
+<b>Extra:</b> ${alert.Extra || ""}
+`;
+
+});
+</script>
+
+</body>
+</html>
