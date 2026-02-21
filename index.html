@@ -2,22 +2,22 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>NDC MAIN PAGE</title>
+<title>Weather Alert Center</title>
 
 <style>
 
 body{
-font-family: Arial, Helvetica, sans-serif;
+margin:0;
+font-family:Arial, Helvetica, sans-serif;
 background:#0f172a;
 color:white;
-margin:0;
 }
 
 .header{
 background:#1e293b;
 padding:20px;
-font-size:32px;
 text-align:center;
+font-size:34px;
 font-weight:bold;
 }
 
@@ -47,20 +47,25 @@ border-radius:8px;
 }
 
 .alert{
-background:#7f1d1d;
 padding:15px;
 border-radius:8px;
-margin-bottom:10px;
+margin-bottom:12px;
+background:#7f1d1d;
 }
 
 .alert h3{
-margin:0 0 5px 0;
+margin:0 0 6px 0;
 }
 
 .stream{
 background:#1d4ed8;
 padding:15px;
 border-radius:8px;
+font-weight:bold;
+}
+
+a{
+color:white;
 }
 
 </style>
@@ -80,11 +85,9 @@ Weather Alert Center
 <h2>SPC Outlooks</h2>
 
 <div class="images">
-
 <img id="day1" src="DAY_1.jpeg">
 <img id="day1tor" src="DAY_1_TOR.jpeg">
 <img id="day2" src="DAY_2.jpeg">
-
 </div>
 
 </div>
@@ -103,7 +106,7 @@ Loading alerts...
 
 <div class="card">
 
-<h2>Live Stream</h2>
+<h2>YouTube Stream</h2>
 
 <div id="ytStream">
 Checking for live stream...
@@ -119,11 +122,11 @@ Checking for live stream...
 function loadAlerts(){
 
 fetch("alert.txt?"+Date.now())
-.then(r=>r.text())
+.then(response=>response.text())
 .then(data=>{
 
-let alerts = [];
-let current = {};
+let alerts=[];
+let current={};
 
 data.split("\n").forEach(line=>{
 
@@ -147,12 +150,16 @@ current[key]=value;
 
 });
 
-if(Object.keys(current).length>0) alerts.push(current);
+if(Object.keys(current).length>0){
+alerts.push(current);
+}
 
 let html="";
 
 if(alerts.length===0){
-html="No active alerts";
+
+html="No active alerts.";
+
 }else{
 
 alerts.forEach(alert=>{
@@ -160,13 +167,13 @@ alerts.forEach(alert=>{
 html+=`
 <div class="alert">
 
-<h3>${alert.Title||"Alert"}</h3>
+<h3>${alert.Title || "Weather Alert"}</h3>
 
-<b>Severity:</b> ${alert.Severity||""}<br>
-<b>Area:</b> ${alert.Area||""}<br>
-<b>Hazard:</b> ${alert.Hazard||""}<br>
-<b>Summary:</b> ${alert.Summary||""}<br>
-<b>Expires:</b> ${alert.Expires||""}
+<b>Severity:</b> ${alert.Severity || ""}<br>
+<b>Area:</b> ${alert.Area || ""}<br>
+<b>Hazard:</b> ${alert.Hazard || ""}<br>
+<b>Summary:</b> ${alert.Summary || ""}<br>
+<b>Expires:</b> ${alert.Expires || ""}
 
 </div>
 `;
@@ -197,21 +204,35 @@ async function checkYouTube(){
 
 let channel="UC4dEEgM9UgSBjMjWLOBlOEg";
 
-let url=`https://www.youtube.com/feeds/videos.xml?channel_id=${channel}`;
+let url=`https://api.rss2json.com/v1/api.json?rss_url=https://www.youtube.com/feeds/videos.xml?channel_id=${channel}`;
 
 try{
 
-let r=await fetch(url);
-let text=await r.text();
+let response=await fetch(url);
+let data=await response.json();
 
-if(text.includes("yt:liveBroadcastContent>live")){
+let live=false;
 
-document.getElementById("ytStream").innerHTML=
-'<div class="stream">🔴 Live Now on YouTube!</div>';
+data.items.forEach(video=>{
+if(video.title.toLowerCase().includes("live")){
+live=true;
+}
+});
+
+if(live){
+
+document.getElementById("ytStream").innerHTML=`
+<div class="stream">
+🔴 LIVE NOW<br>
+<a href="https://youtube.com/channel/${channel}/live" target="_blank">
+Watch the Stream
+</a>
+</div>
+`;
 
 }else{
 
-document.getElementById("ytStream").innerHTML="No active stream.";
+document.getElementById("ytStream").innerHTML="No active livestream.";
 
 }
 
