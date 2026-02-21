@@ -2,64 +2,236 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Weather Alerts</title>
-<link rel="stylesheet" href="style.css">
+<title>NDC MAIN PAGE</title>
+
+<style>
+
+body{
+font-family: Arial, Helvetica, sans-serif;
+background:#0f172a;
+color:white;
+margin:0;
+}
+
+.header{
+background:#1e293b;
+padding:20px;
+font-size:32px;
+text-align:center;
+font-weight:bold;
+}
+
+.container{
+max-width:1100px;
+margin:auto;
+padding:20px;
+}
+
+.card{
+background:#1e293b;
+border-radius:10px;
+padding:20px;
+margin-bottom:20px;
+box-shadow:0 0 10px rgba(0,0,0,0.4);
+}
+
+.images{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+gap:15px;
+}
+
+.images img{
+width:100%;
+border-radius:8px;
+}
+
+.alert{
+background:#7f1d1d;
+padding:15px;
+border-radius:8px;
+margin-bottom:10px;
+}
+
+.alert h3{
+margin:0 0 5px 0;
+}
+
+.stream{
+background:#1d4ed8;
+padding:15px;
+border-radius:8px;
+}
+
+</style>
 </head>
+
 
 <body>
 
-<div class="title">
+<div class="header">
 Weather Alert Center
 </div>
 
+<div class="container">
+
+<div class="card">
+
+<h2>SPC Outlooks</h2>
+
 <div class="images">
-<img src="DAY_1.jpeg">
-<img src="DAY_1_TOR.jpeg">
-<img src="DAY_2.jpeg">
-</div>
 
-<div class="alertBox">
-<h2>Current Alert</h2>
+<img id="day1" src="DAY_1.jpeg">
+<img id="day1tor" src="DAY_1_TOR.jpeg">
+<img id="day2" src="DAY_2.jpeg">
 
-<div id="alertData">
-Loading alert...
 </div>
 
 </div>
+
+
+<div class="card">
+
+<h2>Active Alerts</h2>
+
+<div id="alertList">
+Loading alerts...
+</div>
+
+</div>
+
+
+<div class="card">
+
+<h2>Live Stream</h2>
+
+<div id="ytStream">
+Checking for live stream...
+</div>
+
+</div>
+
+</div>
+
 
 <script>
-fetch("alert.txt")
-.then(response => response.text())
-.then(data => {
 
-let alert = {};
+function loadAlerts(){
 
-data.split("\n").forEach(line => {
+fetch("alert.txt?"+Date.now())
+.then(r=>r.text())
+.then(data=>{
+
+let alerts = [];
+let current = {};
+
+data.split("\n").forEach(line=>{
+
+if(line.trim()===""){
+if(Object.keys(current).length>0){
+alerts.push(current);
+current={};
+}
+return;
+}
 
 if(line.includes(":")){
 
-let parts = line.split(":");
-let key = parts[0].trim();
-let value = parts.slice(1).join(":").trim();
+let parts=line.split(":");
+let key=parts[0].trim();
+let value=parts.slice(1).join(":").trim();
 
-alert[key] = value;
+current[key]=value;
 
 }
 
 });
 
-document.getElementById("alertData").innerHTML = `
-<b>Title:</b> ${alert.Title || ""}<br>
-<b>Severity:</b> ${alert.Severity || ""}<br>
-<b>Summary:</b> ${alert.Summary || ""}<br>
-<b>Hazard:</b> ${alert.Hazard || ""}<br>
-<b>Area:</b> ${alert.Area || ""}<br>
-<b>Direction:</b> ${alert.Direction || ""}<br>
-<b>Expires:</b> ${alert.Expires || ""}<br>
-<b>Extra:</b> ${alert.Extra || ""}
+if(Object.keys(current).length>0) alerts.push(current);
+
+let html="";
+
+if(alerts.length===0){
+html="No active alerts";
+}else{
+
+alerts.forEach(alert=>{
+
+html+=`
+<div class="alert">
+
+<h3>${alert.Title||"Alert"}</h3>
+
+<b>Severity:</b> ${alert.Severity||""}<br>
+<b>Area:</b> ${alert.Area||""}<br>
+<b>Hazard:</b> ${alert.Hazard||""}<br>
+<b>Summary:</b> ${alert.Summary||""}<br>
+<b>Expires:</b> ${alert.Expires||""}
+
+</div>
 `;
 
 });
+
+}
+
+document.getElementById("alertList").innerHTML=html;
+
+});
+
+}
+
+
+
+function refreshImages(){
+
+document.getElementById("day1").src="DAY_1.jpeg?"+Date.now();
+document.getElementById("day1tor").src="DAY_1_TOR.jpeg?"+Date.now();
+document.getElementById("day2").src="DAY_2.jpeg?"+Date.now();
+
+}
+
+
+
+async function checkYouTube(){
+
+let channel="YOUR_CHANNEL_ID";
+
+let url=`https://www.youtube.com/feeds/videos.xml?channel_id=${channel}`;
+
+try{
+
+let r=await fetch(url);
+let text=await r.text();
+
+if(text.includes("yt:liveBroadcastContent>live")){
+
+document.getElementById("ytStream").innerHTML=
+'<div class="stream">🔴 Live Now on YouTube!</div>';
+
+}else{
+
+document.getElementById("ytStream").innerHTML="No active stream.";
+
+}
+
+}catch{
+
+document.getElementById("ytStream").innerHTML="Unable to check stream.";
+
+}
+
+}
+
+
+
+loadAlerts();
+checkYouTube();
+
+setInterval(loadAlerts,60000);
+setInterval(refreshImages,900000);
+setInterval(checkYouTube,120000);
+
 </script>
 
 </body>
