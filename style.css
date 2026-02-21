@@ -1,0 +1,37 @@
+body {
+
+background-image: url("bg.jpg");
+background-size: cover;
+background-position: center;
+font-family: Arial;
+color: white;
+text-align: center;
+
+}
+
+.title{
+
+font-size: 48px;
+font-weight: bold;
+margin-top: 30px;
+margin-bottom: 40px;
+
+}
+
+.images img{
+
+width: 300px;
+margin: 10px;
+border-radius: 10px;
+
+}
+
+.alertBox{
+
+background: rgba(0,0,0,0.6);
+padding: 20px;
+width: 60%;
+margin: auto;
+border-radius: 10px;
+
+}
