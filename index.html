@@ -2,62 +2,81 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Weather Alert Center</title>
+<title>NDC SITE</title>
 
 <style>
 
 body{
-margin:0;
-font-family:Arial, Helvetica, sans-serif;
-background:#0f172a;
-color:white;
+  margin:0;
+  font-family:Arial, Helvetica, sans-serif;
+  background:#0f172a;
+  color:white;
 }
 
 .header{
-background:#1e293b;
-padding:20px;
-text-align:center;
-font-size:34px;
-font-weight:bold;
+  background:#1e293b;
+  padding:20px;
+  text-align:center;
+  font-size:34px;
+  font-weight:bold;
 }
 
 .container{
-max-width:1100px;
-margin:auto;
-padding:20px;
+  max-width:1100px;
+  margin:auto;
+  padding:20px;
 }
 
 .card{
-background:#1e293b;
-border-radius:10px;
-padding:20px;
-margin-bottom:20px;
-box-shadow:0 0 10px rgba(0,0,0,0.4);
+  background:#1e293b;
+  border-radius:10px;
+  padding:20px;
+  margin-bottom:20px;
+  box-shadow:0 0 10px rgba(0,0,0,0.4);
 }
 
 .images{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
-gap:15px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:15px;
 }
 
 .images img{
-width:100%;
-border-radius:8px;
+  width:100%;
+  border-radius:8px;
 }
 
 .alert{
-padding:15px;
-border-radius:8px;
-margin-bottom:12px;
-background:#7f1d1d;
+  padding:15px;
+  border-radius:8px;
+  margin-bottom:12px;
+  background:#7f1d1d;
+}
+
+.stream{
+  background:#1d4ed8;
+  padding:15px;
+  border-radius:8px;
+  font-weight:bold;
+  text-align:center;
 }
 
 .player iframe{
-width:100%;
-height:400px;
-border:none;
-border-radius:8px;
+  width:100%;
+  height:400px;
+  border:none;
+  border-radius:8px;
+}
+
+.report{
+  margin-bottom:12px;
+  padding:10px;
+  background:#334155;
+  border-radius:6px;
+}
+
+a{
+  color:white;
 }
 
 </style>
@@ -66,160 +85,168 @@ border-radius:8px;
 <body>
 
 <div class="header">
-Weather Alert Center
+National Disaster Center
 </div>
 
 <div class="container">
 
+<!-- SPC Images -->
 <div class="card">
 <h2>SASPC Outlooks</h2>
-
 <div class="images">
 <img id="day1" src="DAY_1.jpeg">
 <img id="day1tor" src="DAY_1_TOR.jpeg">
 <img id="day2" src="DAY_2.jpeg">
 </div>
-
 </div>
 
-
+<!-- Active Alerts -->
 <div class="card">
-<h2>Active SANWS Alerts</h2>
+<h2>SANWS Active Alerts</h2>
 <div id="alertList">Loading alerts...</div>
 </div>
 
-
+<!-- YouTube Live Stream -->
 <div class="card">
 <h2>NDC Live Stream</h2>
 <div id="ytStream">Checking stream status...</div>
 </div>
 
+<!-- Recent Storm Reports -->
+<div class="card">
+<h2>NOAA Recent Storm Reports</h2>
+<div id="stormReports">Loading reports...</div>
 </div>
 
+</div> <!-- container end -->
 
 <script>
 
+// ---------- Active Alerts ----------
 function loadAlerts(){
+  fetch("alert.txt?"+Date.now())
+  .then(r=>r.text())
+  .then(data=>{
+      let alerts=[];
+      let current={};
 
-fetch("alert.txt?"+Date.now())
-.then(r=>r.text())
-.then(data=>{
+      data.split("\n").forEach(line=>{
+          if(line.trim()===""){
+              if(Object.keys(current).length>0){
+                  alerts.push(current);
+                  current={};
+              }
+              return;
+          }
+          if(line.includes(":")){
+              let parts=line.split(":");
+              let key=parts[0].trim();
+              let value=parts.slice(1).join(":").trim();
+              current[key]=value;
+          }
+      });
 
-let alerts=[];
-let current={};
+      if(Object.keys(current).length>0) alerts.push(current);
 
-data.split("\n").forEach(line=>{
-
-if(line.trim()===""){
-if(Object.keys(current).length>0){
-alerts.push(current);
-current={};
-}
-return;
-}
-
-if(line.includes(":")){
-let parts=line.split(":");
-let key=parts[0].trim();
-let value=parts.slice(1).join(":").trim();
-current[key]=value;
-}
-
-});
-
-if(Object.keys(current).length>0) alerts.push(current);
-
-let html="";
-
-if(alerts.length===0){
-html="No active alerts.";
-}else{
-
-alerts.forEach(alert=>{
-
-html+=`
-<div class="alert">
-
-<h3>${alert.Title || "Weather Alert"}</h3>
-
-<b>Severity:</b> ${alert.Severity || ""}<br>
-<b>Area:</b> ${alert.Area || ""}<br>
-<b>Hazard:</b> ${alert.Hazard || ""}<br>
-<b>Summary:</b> ${alert.Summary || ""}<br>
-<b>Expires:</b> ${alert.Expires || ""}
-
-</div>
-`;
-
-});
-
+      let html="";
+      if(alerts.length===0){
+          html="No active alerts.";
+      } else {
+          alerts.forEach(alert=>{
+              html+=`
+              <div class="alert">
+                  <h3>${alert.Title || "Weather Alert"}</h3>
+                  <b>Severity:</b> ${alert.Severity || ""}<br>
+                  <b>Area:</b> ${alert.Area || ""}<br>
+                  <b>Hazard:</b> ${alert.Hazard || ""}<br>
+                  <b>Summary:</b> ${alert.Summary || ""}<br>
+                  <b>Expires:</b> ${alert.Expires || ""}
+              </div>`;
+          });
+      }
+      document.getElementById("alertList").innerHTML=html;
+  });
 }
 
-document.getElementById("alertList").innerHTML=html;
-
-});
-
-}
-
-
-
+// ---------- SPC Images Refresh ----------
 function refreshImages(){
-
-document.getElementById("day1").src="DAY_1.jpeg?"+Date.now();
-document.getElementById("day1tor").src="DAY_1_TOR.jpeg?"+Date.now();
-document.getElementById("day2").src="DAY_2.jpeg?"+Date.now();
-
+  document.getElementById("day1").src="DAY_1.jpeg?"+Date.now();
+  document.getElementById("day1tor").src="DAY_1_TOR.jpeg?"+Date.now();
+  document.getElementById("day2").src="DAY_2.jpeg?"+Date.now();
 }
 
-
-
+// ---------- YouTube Live Stream from live.txt ----------
 function checkStream(){
+  const CHANNEL_ID = "UC4dEEgM9UgSBjMjWLOBlOEg"; // Replace with your channel ID
+  fetch("live.txt?"+Date.now())
+  .then(r=>r.text())
+  .then(data=>{
+      const status = data.trim().toLowerCase();
+      const container = document.getElementById("ytStream");
 
-fetch("live.txt?"+Date.now())
-.then(r=>r.text())
-.then(data=>{
-
-let link=data.trim();
-
-if(link==="offline" || link===""){
-
-document.getElementById("ytStream").innerHTML="No active livestream.";
-
-return;
-
+      if(status === "offline" || status === ""){
+          container.innerHTML = "No active livestream.";
+      } else if(status === "live"){
+          container.innerHTML = `
+          <div class="player">
+            <iframe
+            src="https://www.youtube.com/embed/live_stream?channel=${CHANNEL_ID}&autoplay=1&mute=1"
+            allowfullscreen>
+            </iframe>
+          </div>`;
+      } else {
+          container.innerHTML = "Invalid live.txt content.";
+      }
+  });
 }
 
-let videoID="";
-
-if(link.includes("watch?v=")){
-videoID=link.split("watch?v=")[1];
-}else if(link.includes("youtu.be/")){
-videoID=link.split("youtu.be/")[1];
+// ---------- Recent Storm Reports ----------
+function loadStormReports(){
+  fetch("reports.txt?"+Date.now())
+  .then(r=>r.text())
+  .then(data=>{
+      let items = data.trim().split("\n\n");
+      if(!data.trim() || items.length===0){
+          document.getElementById("stormReports").innerHTML="No recent reports.";
+          return;
+      }
+      let html="";
+      items.forEach(report=>{
+          let lines=report.split("\n");
+          let type="", time="", loc="";
+          lines.forEach(line=>{
+              let parts=line.split(":");
+              let key=parts[0].trim();
+              let val=parts.slice(1).join(":").trim();
+              if(key==="Report type") type=val;
+              if(key==="Time") time=val;
+              if(key==="Location") loc=val;
+          });
+          html+=`
+          <div class="report">
+              <b>Report type:</b> ${type}<br>
+              <b>Time:</b> ${time}<br>
+              <b>Location:</b> ${loc}
+          </div>`;
+      });
+      document.getElementById("stormReports").innerHTML=html;
+  })
+  .catch(_=>{
+      document.getElementById("stormReports").innerHTML="Error loading reports.";
+  });
 }
 
-document.getElementById("ytStream").innerHTML=`
-<div class="player">
-
-<iframe
-src="https://www.youtube.com/embed/${videoID}?autoplay=1&mute=1"
-allowfullscreen>
-</iframe>
-
-</div>
-`;
-
-});
-
-}
-
-
-
+// ---------- Initial Load ----------
 loadAlerts();
+refreshImages();
 checkStream();
+loadStormReports();
 
-setInterval(loadAlerts,60000);
-setInterval(refreshImages,900000);
-setInterval(checkStream,120000);
+// ---------- Intervals ----------
+setInterval(loadAlerts,60000);        // Alerts every 1 min
+setInterval(refreshImages,900000);    // Images every 15 min
+setInterval(checkStream,120000);      // YouTube live every 2 min
+setInterval(loadStormReports,900000); // Storm reports every 15 min
 
 </script>
 
