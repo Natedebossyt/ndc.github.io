@@ -7,76 +7,92 @@
 <style>
 
 body{
-  margin:0;
-  font-family:Arial, Helvetica, sans-serif;
-  background:#0f172a;
-  color:white;
+margin:0;
+font-family:Arial;
+background:#0f172a;
+color:white;
 }
 
 .header{
-  background:#1e293b;
-  padding:20px;
-  text-align:center;
-  font-size:34px;
-  font-weight:bold;
+background:#1e293b;
+padding:20px;
+text-align:center;
+font-size:34px;
+font-weight:bold;
 }
 
 .container{
-  max-width:1100px;
-  margin:auto;
-  padding:20px;
+max-width:1100px;
+margin:auto;
+padding:20px;
 }
 
 .card{
-  background:#1e293b;
-  border-radius:10px;
-  padding:20px;
-  margin-bottom:20px;
-  box-shadow:0 0 10px rgba(0,0,0,0.4);
+background:#1e293b;
+border-radius:10px;
+padding:20px;
+margin-bottom:20px;
+box-shadow:0 0 10px rgba(0,0,0,0.4);
 }
 
 .images{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
-  gap:15px;
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+gap:15px;
 }
 
 .images img{
-  width:100%;
-  border-radius:8px;
+width:100%;
+border-radius:8px;
 }
 
 .alert{
-  padding:15px;
-  border-radius:8px;
-  margin-bottom:12px;
-  background:#7f1d1d;
-}
-
-.stream{
-  background:#1d4ed8;
-  padding:15px;
-  border-radius:8px;
-  font-weight:bold;
-  text-align:center;
+padding:15px;
+border-radius:8px;
+margin-bottom:12px;
+background:#7f1d1d;
 }
 
 .player iframe{
-  width:100%;
-  height:400px;
-  border:none;
-  border-radius:8px;
+width:100%;
+height:400px;
+border:none;
+border-radius:8px;
 }
 
 .report{
-  margin-bottom:12px;
-  padding:10px;
-  background:#334155;
-  border-radius:6px;
+margin-bottom:12px;
+padding:10px;
+background:#334155;
+border-radius:6px;
 }
 
-a{
-  color:white;
+/* risk bar */
+
+.riskBar{
+display:flex;
+margin-top:10px;
+}
+
+.riskBlock{
+width:150px;
+height:40px;
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:bold;
+border-radius:4px;
+margin-right:5px;
+color:black;
+}
+
+/* discussion */
+
+.discussionBox{
+background:#334155;
+padding:15px;
+border-radius:8px;
+white-space:pre-wrap;
 }
 
 </style>
@@ -90,7 +106,6 @@ National Disaster Center
 
 <div class="container">
 
-<!-- SPC Images -->
 <div class="card">
 <h2>SASPC Outlooks</h2>
 <div class="images">
@@ -100,153 +115,235 @@ National Disaster Center
 </div>
 </div>
 
-<!-- Active Alerts -->
 <div class="card">
 <h2>SANWS Active Alerts</h2>
 <div id="alertList">Loading alerts...</div>
 </div>
 
-<!-- YouTube Live Stream -->
 <div class="card">
 <h2>NDC Live Stream</h2>
 <div id="ytStream">Checking stream status...</div>
 </div>
 
-<!-- Recent Storm Reports -->
 <div class="card">
 <h2>NOAA Recent Storm Reports</h2>
 <div id="stormReports">Loading reports...</div>
 </div>
 
-</div> <!-- container end -->
+<div class="card">
+<h2>SASPC Risk Level</h2>
+<div id="riskDisplay"></div>
+</div>
+
+<div class="card">
+<h2>SASPC Forecast Discussion</h2>
+<div id="discussionBox" class="discussionBox">Loading discussion...</div>
+</div>
+
+</div>
 
 <script>
 
-// ---------- Active Alerts ----------
+/* ALERTS */
+
 function loadAlerts(){
-  fetch("alert.txt?"+Date.now())
-  .then(r=>r.text())
-  .then(data=>{
-      let alerts=[];
-      let current={};
+fetch("alert.txt?"+Date.now())
+.then(r=>r.text())
+.then(data=>{
+let alerts=[];
+let current={};
 
-      data.split("\n").forEach(line=>{
-          if(line.trim()===""){
-              if(Object.keys(current).length>0){
-                  alerts.push(current);
-                  current={};
-              }
-              return;
-          }
-          if(line.includes(":")){
-              let parts=line.split(":");
-              let key=parts[0].trim();
-              let value=parts.slice(1).join(":").trim();
-              current[key]=value;
-          }
-      });
+data.split("\n").forEach(line=>{
+if(line.trim()===""){
+if(Object.keys(current).length>0){
+alerts.push(current);
+current={};
+}
+return;
+}
+if(line.includes(":")){
+let parts=line.split(":");
+let key=parts[0].trim();
+let value=parts.slice(1).join(":").trim();
+current[key]=value;
+}
+});
 
-      if(Object.keys(current).length>0) alerts.push(current);
+if(Object.keys(current).length>0) alerts.push(current);
 
-      let html="";
-      if(alerts.length===0){
-          html="No active alerts.";
-      } else {
-          alerts.forEach(alert=>{
-              html+=`
-              <div class="alert">
-                  <h3>${alert.Title || "Weather Alert"}</h3>
-                  <b>Severity:</b> ${alert.Severity || ""}<br>
-                  <b>Area:</b> ${alert.Area || ""}<br>
-                  <b>Hazard:</b> ${alert.Hazard || ""}<br>
-                  <b>Summary:</b> ${alert.Summary || ""}<br>
-                  <b>Expires:</b> ${alert.Expires || ""}
-              </div>`;
-          });
-      }
-      document.getElementById("alertList").innerHTML=html;
-  });
+let html="";
+alerts.forEach(alert=>{
+html+=`
+<div class="alert">
+<h3>${alert.Title || "Weather Alert"}</h3>
+<b>Severity:</b> ${alert.Severity}<br>
+<b>Area:</b> ${alert.Area}<br>
+<b>Hazard:</b> ${alert.Hazard}<br>
+<b>Summary:</b> ${alert.Summary}<br>
+<b>Expires:</b> ${alert.Expires}
+</div>`;
+});
+
+document.getElementById("alertList").innerHTML=html || "No active alerts.";
+});
 }
 
-// ---------- SPC Images Refresh ----------
-function refreshImages(){
-  document.getElementById("day1").src="DAY_1.jpeg?"+Date.now();
-  document.getElementById("day1tor").src="DAY_1_TOR.jpeg?"+Date.now();
-  document.getElementById("day2").src="DAY_2.jpeg?"+Date.now();
-}
+/* STREAM */
 
-// ---------- YouTube Live Stream from live.txt ----------
 function checkStream(){
-  const CHANNEL_ID = "UC4dEEgM9UgSBjMjWLOBlOEg"; // Replace with your channel ID
-  fetch("live.txt?"+Date.now())
-  .then(r=>r.text())
-  .then(data=>{
-      const status = data.trim().toLowerCase();
-      const container = document.getElementById("ytStream");
 
-      if(status === "offline" || status === ""){
-          container.innerHTML = "No active livestream.";
-      } else if(status === "live"){
-          container.innerHTML = `
-          <div class="player">
-            <iframe
-            src="https://www.youtube.com/embed/live_stream?channel=${CHANNEL_ID}&autoplay=1&mute=1"
-            allowfullscreen>
-            </iframe>
-          </div>`;
-      } else {
-          container.innerHTML = "Invalid live.txt content.";
-      }
-  });
+const CHANNEL_ID="UC4dEEgM9UgSBjMjWLOBlOEg";
+
+fetch("live.txt?"+Date.now())
+.then(r=>r.text())
+.then(data=>{
+
+const status=data.trim().toLowerCase();
+
+if(status==="live"){
+document.getElementById("ytStream").innerHTML=
+`<div class="player">
+<iframe src="https://www.youtube.com/embed/live_stream?channel=${CHANNEL_ID}&autoplay=1&mute=1" allowfullscreen></iframe>
+</div>`;
+}else{
+document.getElementById("ytStream").innerHTML="No active livestream.";
 }
 
-// ---------- Recent Storm Reports ----------
+});
+
+}
+
+/* STORM REPORTS */
+
 function loadStormReports(){
-  fetch("reports.txt?"+Date.now())
-  .then(r=>r.text())
-  .then(data=>{
-      let items = data.trim().split("\n\n");
-      if(!data.trim() || items.length===0){
-          document.getElementById("stormReports").innerHTML="No recent reports.";
-          return;
-      }
-      let html="";
-      items.forEach(report=>{
-          let lines=report.split("\n");
-          let type="", time="", loc="";
-          lines.forEach(line=>{
-              let parts=line.split(":");
-              let key=parts[0].trim();
-              let val=parts.slice(1).join(":").trim();
-              if(key==="Report type") type=val;
-              if(key==="Time") time=val;
-              if(key==="Location") loc=val;
-          });
-          html+=`
-          <div class="report">
-              <b>Report type:</b> ${type}<br>
-              <b>Time:</b> ${time}<br>
-              <b>Location:</b> ${loc}
-          </div>`;
-      });
-      document.getElementById("stormReports").innerHTML=html;
-  })
-  .catch(_=>{
-      document.getElementById("stormReports").innerHTML="Error loading reports.";
-  });
+
+fetch("reports.txt?"+Date.now())
+.then(r=>r.text())
+.then(data=>{
+
+if(!data.trim()){
+document.getElementById("stormReports").innerHTML="No recent reports.";
+return;
 }
 
-// ---------- Initial Load ----------
+let blocks=data.split("\n\n");
+let html="";
+
+blocks.forEach(rep=>{
+
+let type="",time="",loc="";
+
+rep.split("\n").forEach(line=>{
+let parts=line.split(":");
+let key=parts[0].trim();
+let val=parts.slice(1).join(":").trim();
+
+if(key==="Report type") type=val;
+if(key==="Time") time=val;
+if(key==="Location") loc=val;
+});
+
+html+=`
+<div class="report">
+<b>Report type:</b> ${type}<br>
+<b>Time:</b> ${time}<br>
+<b>Location:</b> ${loc}
+</div>
+`;
+
+});
+
+document.getElementById("stormReports").innerHTML=html;
+
+});
+
+}
+
+/* RISK BAR */
+
+const riskColors={
+MRGL:"#3c783c",
+SLGT:"#ff9600",
+ENH:"#ff7f00",
+MDT:"#cd0000",
+HIGH:"#ff00ff",
+EXTR:"#9000ff"
+};
+
+function loadRisk(){
+
+fetch("risk.txt?"+Date.now())
+.then(r=>r.text())
+.then(data=>{
+
+const risk=data.trim().toUpperCase();
+
+if(!riskColors[risk]){
+document.getElementById("riskDisplay").innerHTML="No risk data.";
+return;
+}
+
+const color=riskColors[risk];
+
+document.getElementById("riskDisplay").innerHTML=
+`<div class="riskBar">
+<div class="riskBlock" style="background:${color}">
+${risk}
+</div>
+</div>`;
+
+});
+
+}
+
+/* DISCUSSION */
+
+function loadDiscussion(){
+
+fetch("GFD.txt?"+Date.now())
+.then(r=>r.text())
+.then(data=>{
+
+if(!data.trim()){
+
+document.getElementById("discussionBox").innerText=
+"Discussion not found, or one hasnt been made yet.";
+
+}else{
+
+document.getElementById("discussionBox").innerText=data;
+
+}
+
+});
+
+}
+
+/* SPC IMAGE REFRESH */
+
+function refreshImages(){
+
+document.getElementById("day1").src="DAY_1.jpeg?"+Date.now();
+document.getElementById("day1tor").src="DAY_1_TOR.jpeg?"+Date.now();
+document.getElementById("day2").src="DAY_2.jpeg?"+Date.now();
+
+}
+
+/* START */
+
 loadAlerts();
-refreshImages();
 checkStream();
 loadStormReports();
+loadRisk();
+loadDiscussion();
+refreshImages();
 
-// ---------- Intervals ----------
-setInterval(loadAlerts,60000);        // Alerts every 1 min
-setInterval(refreshImages,900000);    // Images every 15 min
-setInterval(checkStream,120000);      // YouTube live every 2 min
-setInterval(loadStormReports,900000); // Storm reports every 15 min
+setInterval(loadAlerts,60000);
+setInterval(checkStream,120000);
+setInterval(loadStormReports,900000);
+setInterval(loadRisk,300000);
+setInterval(loadDiscussion,300000);
+setInterval(refreshImages,900000);
 
 </script>
 
